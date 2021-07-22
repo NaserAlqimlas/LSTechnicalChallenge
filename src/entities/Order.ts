@@ -12,27 +12,27 @@ import { OrderProducts } from "./OrderProducts";
 
 @ObjectType()
 @Entity()
-export class Product extends BaseEntity {
+export class Order extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
-  @OneToMany(() => OrderProducts, (orderProducts) => orderProducts.product)
+  @OneToMany(() => OrderProducts, (orderProducts) => orderProducts.order)
   id!: number;
 
   @Field()
   @Column()
-  name!: string;
+  firstName!: string;
 
   @Field()
   @Column()
-  description: string;
-
-  @Field()
-  @Column({ type: "float" })
-  price!: number;
+  lastName!: string;
 
   @Field()
   @Column()
-  owner!: string;
+  address!: string;
+
+  @Field()
+  @Column()
+  comments!: string;
 
   @Field(() => String)
   @CreateDateColumn()

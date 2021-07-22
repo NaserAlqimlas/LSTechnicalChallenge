@@ -1,39 +1,48 @@
 import { Product } from "../entities/Product";
-import { MyContext } from "../types";
-import { Arg, Ctx, Float, Int, Mutation, Query, Resolver } from "type-graphql";
+import {
+  Arg,
+  Field,
+  InputType,
+  Int,
+  Mutation,
+  Query,
+  Resolver,
+} from "type-graphql";
+import { ILike } from "typeorm";
 
+@InputType()
+class ProductInput {
+  @Field()
+  name: string;
+
+  @Field()
+  price: number;
+
+  @Field()
+  description: string;
+
+  @Field()
+  owner: string;
+}
 @Resolver()
 export class ProductResolver {
   @Query(() => [Product])
-  products(@Ctx() { em }: MyContext): Promise<Product[]> {
-    return em.find(Product, {});
+  products(): Promise<Product[]> {
+    return Product.find();
   }
 
   @Query(() => Product, { nullable: true })
-  product(
-    @Arg("id", () => Int) id: number,
-    @Ctx() { em }: MyContext
-  ): Promise<Product | null> {
-    return em.findOne(Product, { id });
+  product(@Arg("id", () => Int) id: number): Promise<Product | undefined> {
+    return Product.findOne(id);
   }
 
   @Query(() => [Product])
-  search(
-    @Arg("name", () => String) name: string,
-    @Ctx() { em }: MyContext
-  ): Promise<Product[]> {
-    return em.find(Product, { name: { $like: `%${name}%` } });
+  search(@Arg("name", () => String) name: string): Promise<Product[]> {
+    return Product.find({ name: ILike(`%${name}%`) });
   }
 
   @Mutation(() => Product)
-  async createProduct(
-    @Arg("name", () => String) name: string,
-    @Arg("price", () => Float) price: number,
-    @Arg("description", () => String, { nullable: true }) description: string,
-    @Ctx() { em }: MyContext
-  ): Promise<Product> {
-    const product = em.create(Product, { name, price, description });
-    await em.persistAndFlush(product);
-    return product;
+  async createProduct(@Arg("input") input: ProductInput): Promise<Product> {
+    return Product.create({ ...input }).save();
   }
 }
