@@ -8,6 +8,7 @@ import { createConnection } from "typeorm";
 import { Product } from "./entities/Product";
 import { Order } from "./entities/Order";
 import { OrderProducts } from "./entities/OrderProducts";
+import * as bodyParser from "body-parser";
 import { OrderResolver } from "./resolvers/order";
 
 const main = async () => {
@@ -23,9 +24,17 @@ const main = async () => {
 
   const app = express();
 
+  app.use(
+    bodyParser.urlencoded({
+      limit: "50mb",
+      parameterLimit: 100000,
+      extended: true,
+    })
+  );
+
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [ProductResolver],
+      resolvers: [ProductResolver, OrderResolver],
       validate: false,
     }),
     // context: () => (),

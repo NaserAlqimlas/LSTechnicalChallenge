@@ -23,7 +23,11 @@ class ProductInput {
 
   @Field()
   owner: string;
+
+  @Field()
+  image: string;
 }
+
 @Resolver()
 export class ProductResolver {
   @Query(() => [Product])
