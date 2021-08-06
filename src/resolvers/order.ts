@@ -27,17 +27,31 @@ class OrderInput {
   @Field()
   comments: string;
 
-  @Field(() => [productInfoInput])
-  productInfo: [productInfoInput];
+  @Field(() => [ProductInfoInput])
+  productInfo: [ProductInfoInput];
 }
 
 @InputType()
-class productInfoInput {
+class ProductInfoInput {
   @Field()
   productId: number;
 
   @Field()
   quantity: number;
+}
+
+@ObjectType()
+class OrderOutput {
+  @Field()
+  orderInfo: Order;
+
+  @Field(() => [Product])
+  products: [Product];
+
+  constructor(orderInfo: Order, products: Product[]) {
+    this.orderInfo = orderInfo;
+    this.products = products;
+  }
 }
 
 @Resolver()
@@ -48,22 +62,37 @@ export class OrderResolver {
     return Order.find();
   }
 
-  @Query(() => Order)
-  async order(@Arg("id", () => Int) id: number): Promise<any | undefined> {
+  @Query(() => OrderOutput, { nullable: true })
+  async order(
+    @Arg("id", () => Int) id: number
+  ): Promise<OrderOutput | undefined> {
     const order: Order | undefined = await Order.findOne(id);
     if (order === undefined) {
       console.error("not found");
       return;
     }
+
     const products: OrderProducts[] | undefined = await OrderProducts.find({
       where: { order: order.id },
     });
-    //TODO: fix this, need to get products using orderProducts details, currently returning undefined.
-    // const productInfo = products.forEach(
-    //   async (product) => await Product.find({ where: { id: product.product } })
-    // );
-    console.log(order, products);
-    return;
+    if (products === undefined) {
+      console.error("not found");
+      return;
+    }
+
+    const ids = products.map((product) => product.product);
+    const productInfo = await getConnection()
+      .getRepository(Product)
+      .createQueryBuilder("product")
+      .where("product.id IN (:...ids)", { ids: ids })
+      .getMany();
+    if (productInfo === undefined) {
+      console.error("not found");
+      return;
+    }
+
+    const orderSummary = new OrderOutput(order, productInfo);
+    return orderSummary;
   }
 
   @Mutation(() => Order)
